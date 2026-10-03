@@ -1,0 +1,1651 @@
+import os
+import json
+import shutil
+import urllib.parse
+from pathlib import Path
+
+# Paths
+SRC_DIR = r"C:\Users\henry\Pictures\ARTES\TRABALHOS\CABARET"
+DEST_REPO_DIR = r"H:\Meu Drive\(009) PROJETO O ESTRANGEIRO - TCC\07_WEBSITE\Repositorios_GitHub_Pages\CABARET"
+
+# Artworks Catalog
+ARTWORKS = [
+    {
+        "id": "cabaret-001",
+        "file": "CABARET - 40X60 CM.png",
+        "title": "CABARET I",
+        "subtitle": "O Flagrante e o Vestígio",
+        "series": "CABARET",
+        "year": "2026",
+        "dimensions": "40 × 60 cm",
+        "medium": "Síntese de Espaço Latente, Simulação de Flash Direto e Emulsão Tri-X",
+        "support": "Fine Art Print / Hahnemühle Photo Rag 308g",
+        "edition": "Edição Única (1/1) + 1 P.A.",
+        "curatorial_text": "O primeiro plano é fulminado por uma luz de flash dura e frontal, mergulhando a profundidade no breu absoluto. A figura humana é capturada no instante de transição entre o palco e o refúgio, onde o drapeado e o gesto simulam a mais rigorosa memória do fotojornalismo marginal.",
+        "category": "master",
+        "room": "Sala 01: As Obras Master"
+    },
+    {
+        "id": "cabaret-002",
+        "file": "CABARET-002 - 40X40CM.png",
+        "title": "CABARET II",
+        "subtitle": "A Tensão do Camarin",
+        "series": "CABARET",
+        "year": "2026",
+        "dimensions": "40 × 40 cm",
+        "medium": "Síntese de Espaço Latente, Ótica Imperfeita e Ruído Analógico",
+        "support": "Fine Art Print / Hahnemühle Photo Rag 308g",
+        "edition": "Edição Única (1/1) + 1 P.A.",
+        "curatorial_text": "A geometria quadrada comprime a respiração da cena. O suor sintético, o brilho acetinado e a granulação forçada revelam a mecânica de uma ilusão perfeita: a construção de uma intimidade roubada de sujeitos que nunca existiram.",
+        "category": "master",
+        "room": "Sala 01: As Obras Master"
+    },
+    {
+        "id": "cabaret-003",
+        "file": "CABARET-003 - 120X90CM.jpg",
+        "title": "CABARET III",
+        "subtitle": "A Arquitetura Noturna (Monumental)",
+        "series": "CABARET",
+        "year": "2026",
+        "dimensions": "120 × 90 cm",
+        "medium": "Síntese Algorítmica de Alta Escala, Densidade Ótica e Grão Estendido",
+        "support": "Canvas Mineral Master / Montagem em Chassi Museu",
+        "edition": "Edição Monumental (1/1)",
+        "curatorial_text": "Em escala de museu (120 × 90 cm), a imagem expande a ilusão documental para uma dimensão imersiva. A densidade da fumaça e as vinhetas periféricas testam os limites ontológicos do olhar: quanto mais nos aproximamos do detalhe, mais a certeza fotográfica se dissolve em pura matéria de cálculo e luz.",
+        "category": "master",
+        "room": "Sala 01: As Obras Master"
+    },
+    {
+        "id": "cabaret-estudo-01",
+        "file": "não refinadas/ChatGPT Image 16 de mai. de 2026, 02_12_04.png",
+        "title": "ESTUDO DE LATÊNCIA 01",
+        "subtitle": "Pesquisa de Flash e Grão",
+        "series": "CABARET (Arquivo de Ateliê)",
+        "year": "2026",
+        "dimensions": "Formato Digital de Estudo",
+        "medium": "Registro de Processo / Espaço Latente",
+        "support": "Arquivo de Ateliê",
+        "edition": "Prova de Processo",
+        "curatorial_text": "Ensaio preparatório de renderização sobre a incidência de flash anelar e contraste tonal nas sombras.",
+        "category": "process",
+        "room": "Sala 02: Arquivo & Processo"
+    },
+    {
+        "id": "cabaret-estudo-02",
+        "file": "não refinadas/ChatGPT Image 16 de mai. de 2026, 04_48_58.png",
+        "title": "ESTUDO DE LATÊNCIA 02",
+        "subtitle": "Micro-Desfoque e Movimento",
+        "series": "CABARET (Arquivo de Ateliê)",
+        "year": "2026",
+        "dimensions": "Formato Digital de Estudo",
+        "medium": "Registro de Processo / Espaço Latente",
+        "support": "Arquivo de Ateliê",
+        "edition": "Prova de Processo",
+        "curatorial_text": "Experimentação com corte abrupto de enquadramento e desfoque de movimento periférico simulado.",
+        "category": "process",
+        "room": "Sala 02: Arquivo & Processo"
+    },
+    {
+        "id": "cabaret-estudo-03",
+        "file": "não refinadas/file_000000000894720e929b82de5cb2ae57.png",
+        "title": "ESTUDO DE LATÊNCIA 03",
+        "subtitle": "Densidade de Atmosfera",
+        "series": "CABARET (Arquivo de Ateliê)",
+        "year": "2026",
+        "dimensions": "Formato Digital de Estudo",
+        "medium": "Registro de Processo / Espaço Latente",
+        "support": "Arquivo de Ateliê",
+        "edition": "Prova de Processo",
+        "curatorial_text": "Investigação da fumaça e textura de tecidos sintéticos sob atmosfera noturna ruidosa.",
+        "category": "process",
+        "room": "Sala 02: Arquivo & Processo"
+    }
+]
+
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CABARET — Henrique Taveira (DALLIDO.1988) | White Cube Exhibition</title>
+  <meta name="description" content="A Simulação do Flagrante e a Estética da Falsa Investigação. Ensaio curatorial e exposição da série CABARET de Henrique Taveira (DALLIDO.1988)." />
+  <link rel="canonical" href="https://fariatitan.github.io/CABARET/" />
+
+  <!-- Open Graph / Redes Sociais -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://fariatitan.github.io/CABARET/" />
+  <meta property="og:title" content="CABARET — Henrique Taveira (DALLIDO.1988)" />
+  <meta property="og:description" content="A Simulação do Flagrante e a Estética da Falsa Investigação. Catálogo curatorial em padrão White Cube / Tate Modern." />
+  <meta property="og:image" content="CABARET%20-%2040X60%20CM.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CABARET — Henrique Taveira (DALLIDO.1988)" />
+  <meta name="twitter:description" content="A Simulação do Flagrante e a Estética da Falsa Investigação." />
+  <meta name="twitter:image" content="CABARET%20-%2040X60%20CM.png" />
+
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%23000000'/><circle cx='16' cy='16' r='6' fill='%23ffffff'/></svg>" />
+
+  <!-- Google Fonts: Inter & Cinzel & Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Schema.org JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ExhibitionEvent",
+    "name": "CABARET — A Simulação do Flagrante e a Estética da Falsa Investigação",
+    "description": "Exposição virtual de artes visuais e fotografia sintética de Henrique Taveira.",
+    "artist": {
+      "@type": "Person",
+      "name": "Henrique Taveira",
+      "alternateName": "DALLIDO.1988",
+      "jobTitle": "Artista Visual & Diretor Criativo"
+    },
+    "location": {
+      "@type": "VirtualLocation",
+      "url": "https://fariatitan.github.io/CABARET/"
+    }
+  }
+  </script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #f8f8f9;
+      --surface: #ffffff;
+      --surface-border: #e6e6e8;
+      --border-hairline: #e2e2e5;
+      --text: #111112;
+      --text-muted: #626266;
+      --text-dim: #8e8e93;
+      --accent: #000000;
+      --tag-bg: #f0f0f2;
+      --font-serif: 'Cinzel', serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'Space Mono', Menlo, Monaco, Consolas, monospace;
+      --header-h: 72px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* CURATORIAL GRID / WHITE CUBE LAYOUT */
+    .container {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 20px;
+      }
+    }
+
+    /* HEADER / TOP NAVIGATION */
+    header.site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-hairline);
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .brand-title {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .brand-curator {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .nav-link {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 8px 12px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-link:hover {
+      color: var(--accent);
+      border-color: var(--border-hairline);
+      background: var(--bg-alt);
+    }
+
+    /* SOUND TOGGLE BUTTON */
+    .btn-sound {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--tag-bg);
+      border: 1px solid var(--border-hairline);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .btn-sound:hover {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent);
+    }
+
+    .sound-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-sound.muted .sound-pulse {
+      background: var(--text-dim);
+      box-shadow: none;
+    }
+
+    /* HERO / EXHIBITION ENTRY */
+    section.hero {
+      padding: 90px 0 60px;
+      border-bottom: 1px solid var(--border-hairline);
+      background: linear-gradient(180deg, #ffffff 0%, var(--bg-alt) 100%);
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .hero-tag {
+      padding: 4px 10px;
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(3rem, 7vw, 5.5rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      line-height: 1.0;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-sans);
+      font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+      font-weight: 300;
+      color: var(--text-muted);
+      max-width: 860px;
+      line-height: 1.45;
+      margin-bottom: 36px;
+    }
+
+    .hero-specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-hairline);
+    }
+
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .spec-label {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+
+    .spec-value {
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    /* CURATORIAL ESSAY (THE 3 PILLARS) */
+    section.curatorial-essay {
+      padding: 80px 0;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .section-header {
+      margin-bottom: 48px;
+    }
+
+    .section-kicker {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-kicker::before {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 1px;
+      background: var(--text-dim);
+    }
+
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: 2.2rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .essay-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    @media (max-width: 960px) {
+      .essay-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    .essay-card {
+      background: var(--surface);
+      border: 1px solid var(--border-hairline);
+      padding: 36px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .essay-card:hover {
+      border-color: var(--text);
+    }
+
+    .essay-num {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .essay-card-title {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.3;
+      margin-bottom: 16px;
+      letter-spacing: 0.02em;
+    }
+
+    .essay-card-body {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .essay-bullets {
+      list-style: none;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .essay-bullets li {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      padding-left: 14px;
+      position: relative;
+    }
+
+    .essay-bullets li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* GALLERY ROOMS / WHITE CUBE EXHIBITION */
+    section.gallery-room {
+      padding: 90px 0;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .gallery-room.alt-bg {
+      background: var(--bg-alt);
+    }
+
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 48px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    @media (max-width: 768px) {
+      .room-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+
+    .room-intro {
+      max-width: 650px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ARTWORK DISPLAY CARDS */
+    .art-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 36px;
+      align-items: start;
+    }
+
+    /* Layout Variations for White Cube feel */
+    .art-card {
+      background: #ffffff;
+      border: 1px solid var(--border-hairline);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .art-card:hover {
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+      border-color: #000000;
+    }
+
+    .art-card.col-6 { grid-column: span 6; }
+    .art-card.col-12 { grid-column: span 12; }
+    .art-card.col-4 { grid-column: span 4; }
+
+    @media (max-width: 960px) {
+      .art-card.col-6,
+      .art-card.col-4 { grid-column: span 12; }
+    }
+
+    .art-frame {
+      position: relative;
+      background: #f1f1f3;
+      overflow: hidden;
+      cursor: zoom-in;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+    }
+
+    .art-card.col-12 .art-frame {
+      min-height: 540px;
+    }
+
+    .art-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      transition: transform 0.4s ease;
+      max-height: 700px;
+    }
+
+    .art-card:hover .art-img {
+      transform: scale(1.015);
+    }
+
+    .art-badge-zoom {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-hairline);
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .art-card:hover .art-badge-zoom {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .art-meta-panel {
+      padding: 28px 24px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-hairline);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .art-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border-hairline);
+      padding-bottom: 12px;
+    }
+
+    .art-index {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    .art-dim-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      background: var(--tag-bg);
+      border: 1px solid var(--border-hairline);
+      color: var(--text);
+    }
+
+    .art-title {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .art-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    .art-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    .art-tech-specs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 16px;
+      padding: 12px 14px;
+      background: var(--bg-alt);
+      border-left: 2px solid var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .art-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn-inspect {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #000000;
+      color: #ffffff;
+      border: 1px solid #000000;
+      padding: 11px 18px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-inspect:hover {
+      background: #333333;
+      border-color: #333333;
+    }
+
+    /* FULLSCREEN LIGHTBOX & DEEP ZOOM INSPECTOR */
+    .lightbox-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1000;
+      background: rgba(10, 10, 12, 0.98);
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .lightbox-modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .lightbox-header {
+      height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 15, 18, 0.9);
+      color: #ffffff;
+    }
+
+    .lightbox-title-box {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .lightbox-title {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .lightbox-dim {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: #888890;
+    }
+
+    .lightbox-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-ctrl {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ctrl:hover {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    .btn-close {
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #ffffff;
+      padding: 8px 18px;
+      font-weight: 700;
+    }
+
+    .lightbox-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      user-select: none;
+    }
+
+    .lightbox-viewport.panning {
+      cursor: grabbing;
+    }
+
+    .lightbox-img-wrapper {
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
+      will-change: transform;
+      max-width: 90vw;
+      max-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      pointer-events: none;
+    }
+
+    .lightbox-footer {
+      height: 70px;
+      background: rgba(15, 15, 18, 0.95);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      color: #888890;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    .lightbox-zoom-indicator {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .lightbox-nav-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* FOOTER / COLOPHON */
+    footer.site-footer {
+      padding: 80px 0 60px;
+      background: #000000;
+      color: #ffffff;
+      border-top: 1px solid #222222;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 60px;
+    }
+
+    @media (max-width: 768px) {
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 36px;
+      }
+    }
+
+    .footer-brand {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .footer-desc {
+      color: #888890;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      max-width: 480px;
+    }
+
+    .footer-col-title {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #ffffff;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #333333;
+      padding-bottom: 8px;
+    }
+
+    .footer-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-links a {
+      color: #888890;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: #ffffff;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid #222222;
+      padding-top: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: #66666e;
+    }
+
+    @media (max-width: 768px) {
+      .footer-bottom {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SITE HEADER -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#inicio" class="brand" onclick="AudioEngine.playClick()">
+        <span class="brand-title">CABARET</span>
+        <span class="brand-curator">DALLIDO.1988</span>
+      </a>
+
+      <nav class="nav-actions">
+        <a href="#obras-master" class="nav-link" onclick="AudioEngine.playClick()">Obras Master</a>
+        <a href="#ensaio-curatorial" class="nav-link" onclick="AudioEngine.playClick()">Ensaio Curatorial</a>
+        <a href="#arquivo-processo" class="nav-link" onclick="AudioEngine.playClick()">Arquivo</a>
+        
+        <button id="btnSoundToggle" class="btn-sound" title="Alternar áudio tátil de interface" onclick="AudioEngine.toggleSound()">
+          <span class="sound-pulse"></span>
+          <span id="soundLabel">Áudio Ativo</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section id="inicio" class="hero">
+    <div class="container">
+      <div class="hero-meta">
+        <span class="hero-tag">Série Autoral</span>
+        <span>Exposição Curatorial</span>
+        <span>Ateliê DALLIDO.1988</span>
+      </div>
+
+      <h1 class="hero-title">CABARET</h1>
+      <p class="hero-subtitle">
+        A Simulação do Flagrante e a Estética da Falsa Investigação.<br>
+        Onde a luz dura do flash e o grão analógico constroem a documentação de um submundo sintético.
+      </p>
+
+      <div class="hero-specs-grid">
+        <div class="spec-item">
+          <span class="spec-label">Curadoria & Direção</span>
+          <span class="spec-value">Henrique Taveira (DALLIDO.1988)</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Suporte & Mídia</span>
+          <span class="spec-value">Fine Art Hahnemühle & Canvas Mineral</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Matriz</span>
+          <span class="spec-value">Espaço Latente & Simulação Ótica</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Localização</span>
+          <span class="spec-value">Catálogo & Acervo Independente</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CURATORIAL ESSAY (THE 3 PILLARS) -->
+  <section id="ensaio-curatorial" class="curatorial-essay">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-kicker">Texto Crítico & Fundamentação</div>
+        <h2 class="section-title">O Manifesto da Série</h2>
+      </div>
+
+      <div class="essay-grid">
+        <!-- Card 1 -->
+        <article class="essay-card">
+          <div class="essay-num">01 / RUPTURA</div>
+          <h3 class="essay-card-title">O Fantasma Documental</h3>
+          <p class="essay-card-body">
+            A série <strong>CABARET</strong> representa um ponto de ruptura metodológica no portfólio de DALLIDO.1988.
+            Enquanto a base do manifesto da <em>Arte Híbrida</em> se apoia na existência de uma "Matriz Tátil" (uma tela a óleo física ou pintura prévia), nesta investigação a dinâmica se inverte. Não há registro prévio com a câmera Leica do autor. Não há tela. A matéria-prima que alimenta a máquina não é a imagem, mas sim o <strong>repertório fotográfico</strong> e a memória da luz.
+          </p>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="essay-card">
+          <div class="essay-num">02 / MÉTODO</div>
+          <h3 class="essay-card-title">A Matriz Sintética e a Física da Luz</h3>
+          <p class="essay-card-body">
+            O artista utiliza o espaço latente da Inteligência Artificial para simular a física e as imperfeições da fotografia documental analógica, operando sob a gramática visual do fotojornalismo investigativo:
+          </p>
+          <ul class="essay-bullets">
+            <li><strong>O Flash Direto (On-camera):</strong> A luz dura que achata o primeiro plano e mergulha o fundo no breu, criando um ar de flagrante roubado.</li>
+            <li><strong>O Grão e a Emulsão:</strong> Simulação de filmes de alto ISO (como Tri-X 400 forçado), gerando ruído denso nas sombras.</li>
+            <li><strong>A Ótica Imperfeita:</strong> Vinhetas carregadas, desfoque de movimento periférico e cortes abruptos de enquadramento.</li>
+          </ul>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="essay-card">
+          <div class="essay-num">03 / ONTOLOGIA</div>
+          <h3 class="essay-card-title">A Erosão da Verdade Fotográfica</h3>
+          <p class="essay-card-body">
+            Se em outras coleções DALLIDO.1988 utiliza a espátula digital para desfigurar a forma, em <em>CABARET</em> ele corrói a <strong>ontologia da verdade fotográfica</strong>.
+            Historicamente, a foto atua como prova irrefutável de que um evento ocorreu. Nesta série, fabrica-se o flagrante de um lugar que não existe, habitado por corpos que nunca nasceram. É um ensaio sobre a falência da fotografia como documento de verdade na era da síntese artificial.
+          </p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY ROOM 01: MASTER EDITIONS -->
+  <section id="obras-master" class="gallery-room">
+    <div class="container">
+      <div class="room-header">
+        <div>
+          <div class="section-kicker">Exposição Principal</div>
+          <h2 class="section-title">Sala 01: As Obras Master</h2>
+        </div>
+        <p class="room-intro">
+          Edições de grande escala preparadas para impressão museológica em Fine Art e Canvas Mineral. Clique em qualquer obra para inspecionar a granulação analógica e os detalhes em altíssima resolução.
+        </p>
+      </div>
+
+      <div class="art-grid">
+        <!-- MASTER 01 -->
+        <div class="art-card col-6" id="card-cabaret-001">
+          <div class="art-frame" onclick="openLightbox('cabaret-001')">
+            <img class="art-img" src="CABARET%20-%2040X60%20CM.png" alt="CABARET I — 40x60 CM" loading="lazy">
+            <div class="art-badge-zoom">🔍 Inspecionar Obra</div>
+          </div>
+          <div class="art-meta-panel">
+            <div class="art-top-row">
+              <span class="art-index">OBRA 01 / MASTER</span>
+              <span class="art-dim-tag">40 × 60 cm</span>
+            </div>
+            <div>
+              <h3 class="art-title">CABARET I</h3>
+              <div class="art-subtitle">O Flagrante e o Vestígio</div>
+            </div>
+            <p class="art-desc">
+              O primeiro plano é fulminado por uma luz de flash dura e frontal, mergulhando a profundidade no breu absoluto. A figura humana é capturada no instante de transição entre o palco e o refúgio.
+            </p>
+            <div class="art-tech-specs">
+              <div><strong>Suporte:</strong> Hahnemühle Photo Rag 308g</div>
+              <div><strong>Tiragem:</strong> Edição Única (1/1) + P.A.</div>
+              <div><strong>Matriz:</strong> Flash Direto / Simulação Tri-X</div>
+              <div><strong>Ano:</strong> 2026</div>
+            </div>
+            <div class="art-actions">
+              <button class="btn-inspect" onclick="openLightbox('cabaret-001')">🔍 Inspecionar em Alta Resolução (7087×4724)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MASTER 02 -->
+        <div class="art-card col-6" id="card-cabaret-002">
+          <div class="art-frame" onclick="openLightbox('cabaret-002')">
+            <img class="art-img" src="CABARET-002%20-%2040X40CM.png" alt="CABARET II — 40x40 CM" loading="lazy">
+            <div class="art-badge-zoom">🔍 Inspecionar Obra</div>
+          </div>
+          <div class="art-meta-panel">
+            <div class="art-top-row">
+              <span class="art-index">OBRA 02 / MASTER</span>
+              <span class="art-dim-tag">40 × 40 cm</span>
+            </div>
+            <div>
+              <h3 class="art-title">CABARET II</h3>
+              <div class="art-subtitle">A Tensão do Camarin</div>
+            </div>
+            <p class="art-desc">
+              A geometria quadrada comprime a respiração da cena. O suor sintético, o brilho acetinado e a granulação forçada revelam a mecânica de uma intimidade roubada de sujeitos inexistentes.
+            </p>
+            <div class="art-tech-specs">
+              <div><strong>Suporte:</strong> Hahnemühle Photo Rag 308g</div>
+              <div><strong>Tiragem:</strong> Edição Única (1/1) + P.A.</div>
+              <div><strong>Matriz:</strong> Ótica Imperfeita & Ruído Analógico</div>
+              <div><strong>Ano:</strong> 2026</div>
+            </div>
+            <div class="art-actions">
+              <button class="btn-inspect" onclick="openLightbox('cabaret-002')">🔍 Inspecionar em Alta Resolução (4724×4724)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MASTER 03 (MONUMENTAL 120X90 CM) -->
+        <div class="art-card col-12" id="card-cabaret-003">
+          <div class="art-frame" onclick="openLightbox('cabaret-003')">
+            <img class="art-img" src="CABARET-003%20-%20120X90CM.jpg" alt="CABARET III — 120x90 CM" loading="lazy">
+            <div class="art-badge-zoom">🔍 Inspecionar Obra Monumental</div>
+          </div>
+          <div class="art-meta-panel">
+            <div class="art-top-row">
+              <span class="art-index">OBRA 03 / FORMATO MONUMENTAL</span>
+              <span class="art-dim-tag">120 × 90 cm</span>
+            </div>
+            <div>
+              <h3 class="art-title">CABARET III</h3>
+              <div class="art-subtitle">A Arquitetura Noturna (Escala Museu)</div>
+            </div>
+            <p class="art-desc">
+              Em escala de museu (120 × 90 cm), a imagem expande a ilusão documental para uma dimensão imersiva. A densidade da fumaça e as vinhetas periféricas testam os limites ontológicos do olhar: quanto mais nos aproximamos do detalhe, mais a certeza fotográfica se dissolve em pura matéria de cálculo e luz.
+            </p>
+            <div class="art-tech-specs">
+              <div><strong>Suporte:</strong> Canvas Mineral Master / Chassi Museu</div>
+              <div><strong>Tiragem:</strong> Edição Monumental (1/1)</div>
+              <div><strong>Resolução Master:</strong> 9449 × 7506 pixels</div>
+              <div><strong>Ano:</strong> 2026</div>
+            </div>
+            <div class="art-actions">
+              <button class="btn-inspect" onclick="openLightbox('cabaret-003')">🔍 Inspecionar em Alta Resolução (9449×7506)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY ROOM 02: PROCESS ARCHIVES & STUDIES -->
+  <section id="arquivo-processo" class="gallery-room alt-bg">
+    <div class="container">
+      <div class="room-header">
+        <div>
+          <div class="section-kicker">Arquivo do Laboratório</div>
+          <h2 class="section-title">Sala 02: Estudos de Espaço Latente</h2>
+        </div>
+        <p class="room-intro">
+          Registros preliminares de ateliê investigando variações de ótica, ruído, ângulo de flash e densidade atmosférica antes da finalização das matrizes master.
+        </p>
+      </div>
+
+      <div class="art-grid">
+        <!-- ESTUDO 01 -->
+        <div class="art-card col-4" id="card-cabaret-estudo-01">
+          <div class="art-frame" onclick="openLightbox('cabaret-estudo-01')">
+            <img class="art-img" src="não%20refinadas/ChatGPT%20Image%2016%20de%20mai.%20de%202026,%2002_12_04.png" alt="Estudo de Latência 01" loading="lazy">
+            <div class="art-badge-zoom">🔍 Inspecionar</div>
+          </div>
+          <div class="art-meta-panel">
+            <div class="art-top-row">
+              <span class="art-index">ESTUDO 01</span>
+              <span class="art-dim-tag">Arquivo Digital</span>
+            </div>
+            <h3 class="art-title" style="font-size: 1.1rem;">ESTUDO DE LATÊNCIA 01</h3>
+            <p class="art-desc" style="font-size: 0.85rem;">Ensaio preparatório de flash anelar e contraste tonal nas sombras.</p>
+            <div class="art-actions">
+              <button class="btn-inspect" style="padding: 8px 12px; font-size: 0.7rem;" onclick="openLightbox('cabaret-estudo-01')">🔍 Inspecionar Estudo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ESTUDO 02 -->
+        <div class="art-card col-4" id="card-cabaret-estudo-02">
+          <div class="art-frame" onclick="openLightbox('cabaret-estudo-02')">
+            <img class="art-img" src="não%20refinadas/ChatGPT%20Image%2016%20de%20mai.%20de%202026,%2004_48_58.png" alt="Estudo de Latência 02" loading="lazy">
+            <div class="art-badge-zoom">🔍 Inspecionar</div>
+          </div>
+          <div class="art-meta-panel">
+            <div class="art-top-row">
+              <span class="art-index">ESTUDO 02</span>
+              <span class="art-dim-tag">Arquivo Digital</span>
+            </div>
+            <h3 class="art-title" style="font-size: 1.1rem;">ESTUDO DE LATÊNCIA 02</h3>
+            <p class="art-desc" style="font-size: 0.85rem;">Experimentação com desfoque de movimento periférico e enquadramento abrupto.</p>
+            <div class="art-actions">
+              <button class="btn-inspect" style="padding: 8px 12px; font-size: 0.7rem;" onclick="openLightbox('cabaret-estudo-02')">🔍 Inspecionar Estudo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ESTUDO 03 -->
+        <div class="art-card col-4" id="card-cabaret-estudo-03">
+          <div class="art-frame" onclick="openLightbox('cabaret-estudo-03')">
+            <img class="art-img" src="não%20refinadas/file_000000000894720e929b82de5cb2ae57.png" alt="Estudo de Latência 03" loading="lazy">
+            <div class="art-badge-zoom">🔍 Inspecionar</div>
+          </div>
+          <div class="art-meta-panel">
+            <div class="art-top-row">
+              <span class="art-index">ESTUDO 03</span>
+              <span class="art-dim-tag">Arquivo Digital</span>
+            </div>
+            <h3 class="art-title" style="font-size: 1.1rem;">ESTUDO DE LATÊNCIA 03</h3>
+            <p class="art-desc" style="font-size: 0.85rem;">Investigação da fumaça sintética e textura têxtil sob atmosfera noturna.</p>
+            <div class="art-actions">
+              <button class="btn-inspect" style="padding: 8px 12px; font-size: 0.7rem;" onclick="openLightbox('cabaret-estudo-03')">🔍 Inspecionar Estudo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">HENRIQUE TAVEIRA</div>
+          <p class="footer-desc">
+            Ateliê autoral de pesquisa pictórica, alfaiataria conceitual, fotografia e arte híbrida.
+            Investigação permanente sobre a desconstrução do corpo, o limite da forma e a síntese da matéria.
+          </p>
+        </div>
+        <div>
+          <div class="footer-col-title">Ecossistema & Links</div>
+          <ul class="footer-links">
+            <li><a href="#inicio" onclick="AudioEngine.playClick()">CABARET (2026)</a></li>
+            <li><a href="https://fariatitan.github.io/Manifesto-Dallido.1988/" target="_blank" onclick="AudioEngine.playClick()">Manifesto DALLIDO.1988</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Ateliê & Contato</div>
+          <ul class="footer-links">
+            <li><a href="https://instagram.com/dallido.1988" target="_blank" onclick="AudioEngine.playClick()">Instagram: @dallido.1988</a></li>
+            <li><a href="mailto:henrique950704952@gmail.com" onclick="AudioEngine.playClick()">Email: henrique950704952@gmail.com</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 Henrique Taveira (DALLIDO.1988). Todos os direitos reservados.</div>
+        <div>White Cube Gallery Standard • Audio Feedback Engine Enabled</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- LIGHTBOX / HIGH-RES INSPECTION MODAL -->
+  <div id="lightboxModal" class="lightbox-modal" role="dialog" aria-modal="true" aria-label="Visualizador de Obra em Alta Resolução">
+    <div class="lightbox-header">
+      <div class="lightbox-title-box">
+        <span id="lbTitle" class="lightbox-title">CABARET I</span>
+        <span id="lbDim" class="lightbox-dim">40 × 60 cm</span>
+      </div>
+
+      <div class="lightbox-controls">
+        <button class="btn-ctrl" onclick="zoomIn()" title="Aumentar Zoom (Scroll Up ou +)">＋ Zoom</button>
+        <button class="btn-ctrl" onclick="zoomOut()" title="Diminuir Zoom (Scroll Down ou -)">－ Zoom</button>
+        <button class="btn-ctrl" onclick="resetZoom()" title="Ajustar à Tela">⛶ Ajustar</button>
+        <button class="btn-ctrl btn-close" onclick="closeLightbox()" title="Fechar Visualizador (ESC)">✕ FECHAR</button>
+      </div>
+    </div>
+
+    <div class="lightbox-viewport" id="lbViewport">
+      <div class="lightbox-img-wrapper" id="lbWrapper">
+        <img id="lbImage" class="lightbox-img" src="" alt="Obra Ampliada">
+      </div>
+    </div>
+
+    <div class="lightbox-footer">
+      <div>
+        <span id="lbIndex">1 / 6</span> — <span id="lbSupport" style="color: #ffffff;">Hahnemühle Photo Rag 308g</span>
+      </div>
+      <div>
+        Nível de Zoom: <span id="lbZoomLevel" class="lightbox-zoom-indicator">100%</span> (Arraste para navegar pelo grão)
+      </div>
+      <div class="lightbox-nav-btns">
+        <button class="btn-ctrl" onclick="prevArtwork()" title="Obra Anterior (Seta Esquerda)">← Anterior</button>
+        <button class="btn-ctrl" onclick="nextArtwork()" title="Próxima Obra (Seta Direita)">Próxima →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT: WEB AUDIO ENGINE & LIGHTBOX LOGIC -->
+  <script>
+    /* ==========================================================
+       1. WEB AUDIO API SOUND ENGINE (Acoustic Shutter & Tactile Click)
+       ========================================================== */
+    const AudioEngine = {
+      ctx: null,
+      enabled: true,
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+
+      toggleSound() {
+        this.init();
+        this.enabled = !this.enabled;
+        const btn = document.getElementById('btnSoundToggle');
+        const label = document.getElementById('soundLabel');
+        if (this.enabled) {
+          btn.classList.remove('muted');
+          label.textContent = 'Áudio Ativo';
+          this.playShutter();
+        } else {
+          btn.classList.add('muted');
+          label.textContent = 'Áudio Mudo';
+        }
+      },
+
+      // Mechanical tactile button click
+      playClick() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const now = this.ctx.currentTime;
+          
+          // Noise pop for tactile snap
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(1400, now);
+          filter.Q.setValueAtTime(3.0, now);
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(240, now);
+          osc.frequency.exponentialRampToValueAtTime(40, now + 0.025);
+
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.03);
+        } catch(e) {}
+      },
+
+      // Mechanical Leica shutter release sound (double acoustic transient)
+      playShutter() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const now = this.ctx.currentTime;
+
+          // Transient 1: Shutter Blade Open
+          const osc1 = this.ctx.createOscillator();
+          const gain1 = this.ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.setValueAtTime(800, now);
+          osc1.frequency.exponentialRampToValueAtTime(80, now + 0.03);
+          gain1.gain.setValueAtTime(0.25, now);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+          osc1.connect(gain1);
+          gain1.connect(this.ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.04);
+
+          // Transient 2: Shutter Curtain Close (30ms later)
+          const osc2 = this.ctx.createOscillator();
+          const gain2 = this.ctx.createGain();
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(320, now + 0.035);
+          osc2.frequency.exponentialRampToValueAtTime(50, now + 0.07);
+          gain2.gain.setValueAtTime(0.2, now + 0.035);
+          gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc2.connect(gain2);
+          gain2.connect(this.ctx.destination);
+          osc2.start(now + 0.035);
+          osc2.stop(now + 0.085);
+        } catch(e) {}
+      },
+
+      // Subtle zoom tick
+      playZoomTick() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1800, now);
+          osc.frequency.exponentialRampToValueAtTime(900, now + 0.015);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.02);
+        } catch(e) {}
+      }
+    };
+
+    // Attach click listener to all buttons and links automatically
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('button, a, .art-frame');
+      if (target && !target.hasAttribute('data-no-sound')) {
+        AudioEngine.init();
+      }
+    });
+
+    /* ==========================================================
+       2. ARTWORKS DATABASE & LIGHTBOX LOGIC
+       ========================================================== */
+    const ARTWORKS_DATA = """ + json.dumps(ARTWORKS, ensure_ascii=False, indent=2) + """;
+
+    let currentArtIndex = 0;
+    let zoomLevel = 1.0;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+
+    const modal = document.getElementById('lightboxModal');
+    const lbImage = document.getElementById('lbImage');
+    const lbWrapper = document.getElementById('lbWrapper');
+    const lbViewport = document.getElementById('lbViewport');
+    const lbTitle = document.getElementById('lbTitle');
+    const lbDim = document.getElementById('lbDim');
+    const lbIndex = document.getElementById('lbIndex');
+    const lbSupport = document.getElementById('lbSupport');
+    const lbZoomLevel = document.getElementById('lbZoomLevel');
+
+    function openLightbox(artId) {
+      AudioEngine.playShutter();
+      const idx = ARTWORKS_DATA.findIndex(a => a.id === artId);
+      if (idx !== -1) {
+        currentArtIndex = idx;
+      }
+      updateLightboxContent();
+      resetZoom();
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      AudioEngine.playClick();
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      resetZoom();
+    }
+
+    function updateLightboxContent() {
+      const art = ARTWORKS_DATA[currentArtIndex];
+      lbTitle.textContent = `${art.title} — ${art.subtitle}`;
+      lbDim.textContent = art.dimensions;
+      lbIndex.textContent = `${currentArtIndex + 1} / ${ARTWORKS_DATA.length}`;
+      lbSupport.textContent = `${art.support} (${art.edition})`;
+      
+      // Encode file name for safe loading
+      const encodedFile = art.file.split('/').map(part => encodeURIComponent(part)).join('/');
+      lbImage.src = encodedFile;
+    }
+
+    function nextArtwork() {
+      AudioEngine.playClick();
+      currentArtIndex = (currentArtIndex + 1) % ARTWORKS_DATA.length;
+      updateLightboxContent();
+      resetZoom();
+    }
+
+    function prevArtwork() {
+      AudioEngine.playClick();
+      currentArtIndex = (currentArtIndex - 1 + ARTWORKS_DATA.length) % ARTWORKS_DATA.length;
+      updateLightboxContent();
+      resetZoom();
+    }
+
+    function applyTransform() {
+      lbWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+      lbZoomLevel.textContent = `${Math.round(zoomLevel * 100)}%`;
+    }
+
+    function zoomIn() {
+      AudioEngine.playZoomTick();
+      zoomLevel = Math.min(zoomLevel * 1.35, 6.0);
+      applyTransform();
+    }
+
+    function zoomOut() {
+      AudioEngine.playZoomTick();
+      zoomLevel = Math.max(zoomLevel / 1.35, 0.6);
+      if (zoomLevel <= 1.0) {
+        panX = 0;
+        panY = 0;
+      }
+      applyTransform();
+    }
+
+    function resetZoom() {
+      AudioEngine.playZoomTick();
+      zoomLevel = 1.0;
+      panX = 0;
+      panY = 0;
+      applyTransform();
+    }
+
+    // MOUSE WHEEL ZOOM ON VIEWPORT
+    lbViewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        zoomIn();
+      } else {
+        zoomOut();
+      }
+    }, { passive: false });
+
+    // PAN / DRAG LOGIC
+    lbViewport.addEventListener('mousedown', (e) => {
+      if (zoomLevel <= 1.0 && e.target !== lbViewport) return;
+      isPanning = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+      lbViewport.classList.add('panning');
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isPanning) {
+        isPanning = false;
+        lbViewport.classList.remove('panning');
+      }
+    });
+
+    // KEYBOARD NAVIGATION
+    window.addEventListener('keydown', (e) => {
+      if (!modal.classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') nextArtwork();
+      if (e.key === 'ArrowLeft') prevArtwork();
+      if (e.key === '+' || e.key === '=') zoomIn();
+      if (e.key === '-' || e.key === '_') zoomOut();
+      if (e.key === '0') resetZoom();
+    });
+  </script>
+</body>
+</html>
+"""
+
+def generate_seo_files(target_dir):
+    # robots.txt
+    robots_content = "User-agent: *\nAllow: /\nSitemap: https://fariatitan.github.io/CABARET/sitemap.xml\n"
+    with open(os.path.join(target_dir, "robots.txt"), "w", encoding="utf-8") as f:
+        f.write(robots_content)
+
+    # sitemap.xml
+    sitemap_content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://fariatitan.github.io/CABARET/</loc>
+    <lastmod>2026-10-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+    with open(os.path.join(target_dir, "sitemap.xml"), "w", encoding="utf-8") as f:
+        f.write(sitemap_content)
+
+    # .nojekyll
+    with open(os.path.join(target_dir, ".nojekyll"), "w", encoding="utf-8") as f:
+        f.write("")
+
+    # content.json
+    with open(os.path.join(target_dir, "content.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "series": "CABARET",
+            "curator": "Henrique Taveira (DALLIDO.1988)",
+            "theme": "A Simulação do Flagrante e a Estética da Falsa Investigação",
+            "artworks": ARTWORKS
+        }, f, ensure_ascii=False, indent=2)
+
+def build_all():
+    print("Building CABARET website in:", SRC_DIR)
+    
+    # 1. Write index.html in SRC_DIR
+    index_path = os.path.join(SRC_DIR, "index.html")
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(HTML_TEMPLATE)
+    print("Generated:", index_path)
+
+    # 2. Write SEO files in SRC_DIR
+    generate_seo_files(SRC_DIR)
+    print("Generated SEO files in:", SRC_DIR)
+
+    # 3. Synchronize to GitHub Pages Repo Dir
+    print("Syncing to GitHub Pages Repo Dir:", DEST_REPO_DIR)
+    os.makedirs(DEST_REPO_DIR, exist_ok=True)
+
+    # Copy all files & subdirectories from SRC_DIR to DEST_REPO_DIR
+    for item in os.listdir(SRC_DIR):
+        src_item = os.path.join(SRC_DIR, item)
+        dest_item = os.path.join(DEST_REPO_DIR, item)
+        if os.path.isdir(src_item):
+            if os.path.exists(dest_item):
+                shutil.rmtree(dest_item)
+            shutil.copytree(src_item, dest_item)
+            print(f"Copied directory: {item}")
+        else:
+            shutil.copy2(src_item, dest_item)
+            print(f"Copied file: {item}")
+
+    print("SUCCESS: CABARET Exhibition site successfully built and synchronized!")
+
+if __name__ == "__main__":
+    build_all()
